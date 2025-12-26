@@ -215,14 +215,14 @@ button {
 .rank-header { color:#aaa; }
 .rank-list { max-height:160px; overflow-y:auto; overflow-x:hidden; }
 .rank-name { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
-.rank-score { text-align:center; }
+.rank-score { text-align: left; }
 
 .rank-time { 
   text-align: right;    /* 文字向右对齐，让时间数字的末尾整齐排列 */
   opacity: 0.8;         /* 透明度设为 0.8（稍微变淡），使其视觉权重低于名字和分数 */
   
   font-size: 11px;      /* 字体大小。时间字符多，适合用较小的字号防止拥挤 */
-  padding-right: 4px;   /* 右侧内边距，防止时间文字紧贴着排行榜的最右边缘 */
+  padding-right: 2px;   /* 右侧内边距，防止时间文字紧贴着排行榜的最右边缘 */
   
   /* 关键属性：强制文字在同一行显示，绝对不允许因为空间不足而折行 */
   white-space: nowrap;  
