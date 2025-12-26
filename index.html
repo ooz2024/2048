@@ -53,7 +53,7 @@ body{
   background: #2b2b2b;      /* 游戏盒子的背景颜色（深灰色） */
   padding: 14px;            /* 盒子的内边距（内容距离边缘的间隙） */
   border-radius: 8px;       /* 盒子四个角的圆角弧度 */
-  width: 400px;             /* 盒子的总宽度（你现在调成了400px） */
+  width: 380px;             /* 盒子的总宽度（你现在调成了400px） */
   /* 以下三行决定了内部元素（分数、网格、排行榜）如何排列 */
   display: flex;            /* 开启弹性布局 */
   flex-direction: column;   /* 让内部元素垂直排列（从上往下排） */
@@ -73,14 +73,14 @@ body{
   /* 定义列数：repeat(4, 70px) 表示创建 4 列，每列宽度固定为 70px */
   /* 如果你调大了 .cell 的宽度，这里必须同步把 70px 改掉 */
   grid-template-columns: repeat(4, 82px); 
-  gap: 10px;                     /* 方块与方块之间的缝隙距离 */
+  grid-template-rows: repeat(4, 82px); 
+  gap: 5px;                     /* 方块与方块之间的缝隙距离 */
   background: #555;             /* 整个网格底盘的背景颜色（通常比方块深） */
-  padding: 7px;                 /* 底盘边缘与内部方块之间的距离 */
+  padding: 5px;                 /* 底盘边缘与内部方块之间的距离 */
   border-radius: 6px;           /* 底盘四个角的圆角弧度 */
   justify-content: center;      /* 让所有的方块在底盘内水平居中 */
   touch-action: none;           /* 禁用浏览器默认的触摸滚动（防止手机玩游戏时页面乱跳） */
   /* 确保垂直方向也是正方形 */
-  grid-template-rows: repeat(4, 82px); 
 }
 
 .cell {
