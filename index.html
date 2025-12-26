@@ -49,71 +49,120 @@ body{
     );
 }
 
-.game{
-  background:#2b2b2b;
-  padding:14px;
-  border-radius:8px;
-  width:360px;
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-  margin:0 auto;
+.game {
+  background: #2b2b2b;      /* 游戏盒子的背景颜色（深灰色） */
+  padding: 14px;            /* 盒子的内边距（内容距离边缘的间隙） */
+  border-radius: 8px;       /* 盒子四个角的圆角弧度 */
+  width: 400px;             /* 盒子的总宽度（你现在调成了400px） */
+  /* 以下三行决定了内部元素（分数、网格、排行榜）如何排列 */
+  display: flex;            /* 开启弹性布局 */
+  flex-direction: column;   /* 让内部元素垂直排列（从上往下排） */
+  gap: 10px;                /* 内部各个组件（如网格和按钮）之间的垂直距离 */ 
+  margin: 0 auto;           /* 让整个游戏盒子在网页页面水平居中 */
 }
 
-.top{
-  display:flex;
-  justify-content:space-between;
-  font-size:14px;
+.top {
+  display: flex;                /* 开启弹性布局，让“得分”和“状态”能排在同一行 */
+  /* 左右对齐：让“得分”靠左边，让“Game Over提示”靠右边，中间留出空隙 */
+  justify-content: space-between; 
+  font-size: 14px;              /* 这一行文字的大小 */
 }
 
-.grid{
-  display:grid;
-  grid-template-columns:repeat(4,70px);
-  gap:6px;
-  background:#555;
-  padding:6px;
-  border-radius:6px;
-  justify-content:center;
-  touch-action:none;
+.grid {
+  display: grid;                /* 开启网格布局模式 */
+  /* 定义列数：repeat(4, 70px) 表示创建 4 列，每列宽度固定为 70px */
+  /* 如果你调大了 .cell 的宽度，这里必须同步把 70px 改掉 */
+  grid-template-columns: repeat(4, 82px); 
+  gap: 10px;                     /* 方块与方块之间的缝隙距离 */
+  background: #555;             /* 整个网格底盘的背景颜色（通常比方块深） */
+  padding: 7px;                 /* 底盘边缘与内部方块之间的距离 */
+  border-radius: 6px;           /* 底盘四个角的圆角弧度 */
+  justify-content: center;      /* 让所有的方块在底盘内水平居中 */
+  touch-action: none;           /* 禁用浏览器默认的触摸滚动（防止手机玩游戏时页面乱跳） */
+  /* 确保垂直方向也是正方形 */
+  grid-template-rows: repeat(4, 82px); 
 }
 
-.cell{
-  background:#777;
-  height:70px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:26px;
-  font-weight:bold;
-  border-radius:4px;
+.cell {
+  background: #777;           /* 方块的背景颜色（空方块时的灰色） */
+  height: 82px;               /* 方块的高度 */
+  width: 82px;                /* 方块的宽度（宽高一致即为正方形） */
+  /* 以下三行用于让数字在方块里水平、垂直绝对居中 */
+  display: flex;              /* 使用弹性盒子布局 */
+  align-items: center;        /* 数字垂直居中 */
+  justify-content: center;    /* 数字水平居中 */
+  font-size: 30px;            /* 数字的大小 */
+  font-weight: bold;          /* 数字加粗 */
+  border-radius: 4px;         /* 方块四个角的圆角弧度 */
+  /* 下面这一行负责方块移动或合并时的平滑动画效果 */
   transition: transform 0.12s ease, background-color 0.15s ease;
 }
 
 /* 🎨 高级方块配色 */
-.v2    { background:#e74c3c; color:#fff; }
-.v4    { background:#27ae60; color:#fff; }
-.v8    { background:#f1c40f; color:#000; }
-.v16   { background:#e67e22; color:#fff; }
-.v32   { background:#d35400; color:#fff; }
-.v64   { background:#c0392b; color:#fff; }
+
+.v2    { background:#e74c3c; color:#fff; }  /* 数字2：红色背景，白色字 */
+.v4    { background:#27ae60; color:#fff; }  /* 数字4：绿色背景，白色字 */
+.v8    { background:#f1c40f; color:#000; }  /* 数字8：黄色背景，黑色字（黄色背景配黑字更清晰） */
+.v16   { background:#e67e22; color:#fff; }  /* 数字16：橙色背景 */
+.v32   { background:#d35400; color:#fff; }  /* 数字32：深橙色背景 */
+.v64   { background:#c0392b; color:#fff; }  /* 数字64：暗红色背景 */
+
+/* 从128开始，方块增加了 box-shadow（外发光/阴影）效果，让高级方块看起来在“发光” */
 .v128  { background:#1abc9c; color:#fff; box-shadow: 0 0 10px #1abc9c; }
 .v256  { background:#3498db; color:#fff; box-shadow: 0 0 12px #3498db; }
 .v512  { background:#9b59b6; color:#fff; box-shadow: 0 0 15px #9b59b6; }
-.v1024 { background:#f39c12; color:#fff; box-shadow: 0 0 20px #f39c12; }
+.v1024 { background:#f39c12; color:#fff; box-shadow: 0 0 20px #f39c12; font-size: 20px; }
+
+/* 强烈的荧光青色发光效果 */
 .v2048 { 
   background: #111; 
   color: #00ffcc; 
   border: 2px solid #00ffcc; 
   box-shadow: 0 0 20px #00ffcc; 
+  font-size: 20px;
 }
 
-button{
-  background:#444;
-  color:#fff;
-  border:none;
-  padding:8px;
-  border-radius:4px;
-  cursor:pointer;
+/* 4096: 亮粉色，带强光 */
+.v4096 { 
+  background: #ff00de; 
+  color: #fff; 
+  box-shadow: 0 0 25px #ff00de; 
+  font-size: 20px;
+}
+
+/* 8192: 深紫色，带有霓虹边框 */
+.v8192 { 
+  background: #6a0dad; 
+  color: #fff; 
+  border: 2px solid #e0b0ff;
+  box-shadow: 0 0 30px #6a0dad; 
+  font-size: 20px;
+}
+
+/* 16384: 纯白色背景，黑色数字（极简致盲光） */
+.v16384 { 
+  background: #ffffff; 
+  color: #000; 
+  box-shadow: 0 0 40px #ffffff; 
+  font-size: 16px;
+}
+
+/* 32768: 动态金黑色 */
+.v32768 { 
+  background: #000; 
+  color: #ffd700; 
+  border: 3px double #ffd700;
+  box-shadow: 0 0 50px #ffd700; 
+  font-size: 16px;
+}
+
+button {
+  background: #444;      /* 按钮的背景颜色（深灰色） */
+  color: #fff;           /* 按钮内文字的颜色（白色） */
+  border: none;          /* 去掉按钮默认的边框（让它看起来更扁平、现代） */
+  padding: 8px;          /* 按钮的内边距（文字到按钮边缘的距离，决定按钮的大小） */
+  border-radius: 4px;    /* 按钮四个角的圆角弧度 */
+  cursor: pointer;       /* 鼠标悬停在按钮上时，光标变成“小手”形状（提示可以点击） */
 }
 
 /* 排行榜 */
@@ -149,10 +198,17 @@ button{
 }
 
 .rank-header, .rank-row { 
-  display: grid; 
-  grid-template-columns: 30px 1fr 50px 80px; 
-  gap: 4px; 
-  align-items: center; 
+  display: grid;                /* 开启网格布局，让序号、名字、分数、时间整齐对齐 */
+  
+  /* 核心设置：定义四列的宽度分配 */
+  /* 30px: 第一列（序号 #）固定宽度 */
+  /* 1fr:  第二列（名字）占用剩余的所有空间（自适应宽度） */
+  /* 50px: 第三列（分数）固定宽度 */
+  /* 110px:第四列（时间）固定宽度，确保 YYYY-MM-DD HH:MM:SS 不换行 */
+  grid-template-columns: 30px 1fr 50px 110px; 
+  
+  gap: 4px;                     /* 每一列之间的水平间隙 */
+  align-items: center;          /* 让这一行里的所有内容在垂直方向上居中对齐 */
 }
 
 .rank-index { text-align: right; color: #fff; }
@@ -160,7 +216,19 @@ button{
 .rank-list { max-height:160px; overflow-y:auto; overflow-x:hidden; }
 .rank-name { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
 .rank-score { text-align:center; }
-.rank-time { text-align:right; opacity:0.8; font-size:10px; padding-right:4px; line-height: 1.2;}
+
+.rank-time { 
+  text-align: right;    /* 文字向右对齐，让时间数字的末尾整齐排列 */
+  opacity: 0.8;         /* 透明度设为 0.8（稍微变淡），使其视觉权重低于名字和分数 */
+  
+  font-size: 11px;      /* 字体大小。时间字符多，适合用较小的字号防止拥挤 */
+  padding-right: 4px;   /* 右侧内边距，防止时间文字紧贴着排行榜的最右边缘 */
+  
+  /* 关键属性：强制文字在同一行显示，绝对不允许因为空间不足而折行 */
+  white-space: nowrap;  
+  
+  line-height: 1.5;     /* 行高。增加一点行间距，让上下行的时间看起来不那么拥挤 */
+}
 
 .modal{
   position:fixed;
@@ -319,7 +387,9 @@ function formatTime(t){
   const h = String(beijing.getHours()).padStart(2, "0");
   const m = String(beijing.getMinutes()).padStart(2, "0");
   const s = String(beijing.getSeconds()).padStart(2, "0");
-  return `${Y}-${M}-${D}<br>${h}:${m}:${s}`;
+  
+  // 将这里的 <br> 替换为空格
+  return `${Y}-${M}-${D} ${h}:${m}:${s}`; 
 }
 
 // 🌐 移植：网络优化后的加载函数
