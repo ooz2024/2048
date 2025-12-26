@@ -1,0 +1,442 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>🎮2048</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.7"></script>
+<script>
+  if (!window.supabase) {
+    document.write('<script src="https://unpkg.com/@supabase/supabase-js@2.39.7"><\/script>');
+  }
+</script>
+
+<!-- ② 紧跟着，立刻检查有没有加载成功 -->
+<script>
+if (!window.supabase) {
+  alert("Supabase SDK 加载失败，请刷新或检查网络");
+}
+</script>
+
+<style>
+*{ box-sizing:border-box; }
+
+body{
+  margin:0;
+  color:#e0e0e0;
+  font-family:monospace;
+  display:flex;
+  justify-content:center;
+  padding:40px 0;
+  overflow-x: hidden;
+
+  background-color:#1e1e1e;
+  background-image:
+    repeating-linear-gradient(
+      45deg,
+      rgba(46,204,113,0.12) 0px,
+      rgba(46,204,113,0.12) 1px,
+      transparent 1px,
+      transparent 24px
+    ),
+    repeating-linear-gradient(
+      -45deg,
+      rgba(231,76,60,0.08) 0px,
+      rgba(231,76,60,0.08) 1px,
+      transparent 1px,
+      transparent 24px
+    );
+}
+
+.game{
+  background:#2b2b2b;
+  padding:14px;
+  border-radius:8px;
+  width:360px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin:0 auto;
+}
+
+.top{
+  display:flex;
+  justify-content:space-between;
+  font-size:14px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(4,70px);
+  gap:6px;
+  background:#555;
+  padding:6px;
+  border-radius:6px;
+  justify-content:center;
+  touch-action:none;
+}
+
+.cell{
+  background:#777;
+  height:70px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:26px;
+  font-weight:bold;
+  border-radius:4px;
+  transition: transform 0.12s ease, background-color 0.15s ease;
+}
+
+/* 🎨 高级方块配色 */
+.v2    { background:#e74c3c; color:#fff; }
+.v4    { background:#27ae60; color:#fff; }
+.v8    { background:#f1c40f; color:#000; }
+.v16   { background:#e67e22; color:#fff; }
+.v32   { background:#d35400; color:#fff; }
+.v64   { background:#c0392b; color:#fff; }
+.v128  { background:#1abc9c; color:#fff; box-shadow: 0 0 10px #1abc9c; }
+.v256  { background:#3498db; color:#fff; box-shadow: 0 0 12px #3498db; }
+.v512  { background:#9b59b6; color:#fff; box-shadow: 0 0 15px #9b59b6; }
+.v1024 { background:#f39c12; color:#fff; box-shadow: 0 0 20px #f39c12; }
+.v2048 { 
+  background: #111; 
+  color: #00ffcc; 
+  border: 2px solid #00ffcc; 
+  box-shadow: 0 0 20px #00ffcc; 
+}
+
+button{
+  background:#444;
+  color:#fff;
+  border:none;
+  padding:8px;
+  border-radius:4px;
+  cursor:pointer;
+}
+
+/* 排行榜 */
+.rank{
+  background:#1f1f1f;
+  border-radius:6px;
+  padding:8px;
+  font-size:12px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+  min-height: 100px;
+  transition: opacity 0.3s;
+}
+
+.rank-title { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; 
+  font-weight: bold; 
+  border-bottom: 1px solid #444; 
+  padding-bottom: 4px; 
+}
+
+.refresh-btn {
+  background: #333;
+  color: #fff;
+  border: none;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+}
+
+.rank-header, .rank-row { 
+  display: grid; 
+  grid-template-columns: 30px 1fr 50px 80px; 
+  gap: 4px; 
+  align-items: center; 
+}
+
+.rank-index { text-align: right; color: #fff; }
+.rank-header { color:#aaa; }
+.rank-list { max-height:160px; overflow-y:auto; overflow-x:hidden; }
+.rank-name { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+.rank-score { text-align:center; }
+.rank-time { text-align:right; opacity:0.8; font-size:10px; padding-right:4px; line-height: 1.2;}
+
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.65);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+
+.modal-box{
+  background:#2b2b2b;
+  padding:16px;
+  border-radius:8px;
+  width:320px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.hint { text-align: center; font-size: 12px; color: #fff; letter-spacing: 2px; user-select: none; }
+
+@keyframes pop { 0% { transform: scale(0.8); } 100% { transform: scale(1); } }
+.cell.moved{ animation: pop 0.18s ease; }
+@keyframes spawn { 0% { transform: scale(0.3); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+.cell.spawn{ animation: spawn 0.2s ease-out; }
+</style>
+
+</head>
+
+<body>
+<div class="game">
+  <div class="top">
+    <div>得分：<span id="score">0</span></div>
+    <div id="status"></div>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="hint">⬆️ ⬅️ ⬇️ ➡️ 移动方块</div>
+
+  <button onclick="restart()">重新开始</button>
+
+  <div class="rank" id="rank">正在读取排行榜…</div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="modal-box">
+    <div style="text-align:center; font-weight:bold;">Game over!</div>
+    <div>你的得分是：<span id="finalScore"></span></div>
+    <div style="font-size:13px; opacity:0.8; margin-bottom:4px;">请输入昵称...组织上会记住你的!</div>
+    <input id="playerName" placeholder="匿名玩家" maxlength="16" style="width:100%; padding:6px; border-radius:4px; border:none;">
+    <div style="display:flex; gap:8px; justify-content:center; margin-top:8px;">
+      <button onclick="submitScore()" id="subBtn">记录得分</button>
+      <button onclick="closeModal()">概不留名</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const supabaseUrl = "https://hivlyphuvzvwnobnoqdl.supabase.co";
+const supabaseKey = "sb_publishable_B3tNHsrkG6U2wu9jW64smA_XtfaDNM0";
+const db = supabase.createClient(supabaseUrl, supabaseKey);
+
+let grid = Array(16).fill(0);
+let score = 0;
+let gameOver = false;
+let spawnedIndex = null;
+let lastGrid = Array(16).fill(0);
+
+const gridEl = document.getElementById("grid");
+const scoreEl = document.getElementById("score");
+const statusEl = document.getElementById("status");
+const rankEl = document.getElementById("rank");
+
+function draw(){
+  gridEl.innerHTML="";
+  grid.forEach((v,i)=>{
+    let d = document.createElement("div");
+    d.className = "cell" + (v ? " v"+v : "");
+    if(v !== lastGrid[i]) d.classList.add("moved");
+    if(i === spawnedIndex) d.classList.add("spawn");
+    d.textContent = v || "";
+    gridEl.appendChild(d);
+  });
+  lastGrid = [...grid];
+  spawnedIndex = null;
+  scoreEl.textContent = score;
+}
+
+function randomAdd(){
+  let e = grid.map((v,i)=>v===0?i:null).filter(v=>v!==null);
+  if(!e.length) return;
+  spawnedIndex = e[Math.floor(Math.random()*e.length)];
+  grid[spawnedIndex] = Math.random() < 0.9 ? 2 : 4;
+}
+
+function slide(arr){
+  arr=arr.filter(v=>v);
+  for(let i=0;i<arr.length-1;i++){
+    if(arr[i]===arr[i+1]){
+      arr[i]*=2;
+      score+=arr[i];
+      arr[i+1]=0;
+    }
+  }
+  arr=arr.filter(v=>v);
+  while(arr.length<4)arr.push(0);
+  return arr;
+}
+
+function move(dir){
+  if(gameOver) return;
+  let moved=false;
+  let g=[...grid];
+  const idx=(i,j)=>{
+    if(dir==="L")return i*4+j;
+    if(dir==="R")return i*4+3-j;
+    if(dir==="U")return j*4+i;
+    return 12-j*4+i;
+  };
+  for(let i=0;i<4;i++){
+    let line=[];
+    for(let j=0;j<4;j++)line.push(g[idx(i,j)]);
+    let s=slide(line);
+    for(let j=0;j<4;j++){
+      let k=idx(i,j);
+      if(grid[k]!==s[j]){grid[k]=s[j];moved=true;}
+    }
+  }
+  if(moved){
+    randomAdd();
+    draw();
+    checkOver();
+  }
+}
+
+function checkOver(){
+  if(grid.includes(0))return;
+  for(let i=0;i<16;i++){
+    if(i%4<3 && grid[i]===grid[i+1])return;
+    if(i<12 && grid[i]===grid[i+4])return;
+  }
+  gameOver = true;
+  statusEl.textContent = "Game over!☠️☠️☠️";
+  openModal();
+}
+
+function formatTime(t){
+  const utc = new Date(t).getTime();
+  const beijing = new Date(utc + 8 * 60 * 60 * 1000);
+  const Y = beijing.getFullYear();
+  const M = String(beijing.getMonth() + 1).padStart(2, "0");
+  const D = String(beijing.getDate()).padStart(2, "0");
+  const h = String(beijing.getHours()).padStart(2, "0");
+  const m = String(beijing.getMinutes()).padStart(2, "0");
+  const s = String(beijing.getSeconds()).padStart(2, "0");
+  return `${Y}-${M}-${D}<br>${h}:${m}:${s}`;
+}
+
+// 🌐 移植：网络优化后的加载函数
+async function loadRank(){
+  rankEl.style.opacity = "0.6";
+  try {
+    let { data, error } = await db.from("scores").select("*").order("score",{ ascending:false }).limit(50);
+    if(error) throw error; // 抛出错误进入 catch
+
+    rankEl.innerHTML=`
+      <div class="rank-title">
+        <button class="refresh-btn" onclick="loadRank()">刷新</button>
+        <span>🌍 排行榜 ⭐</span>
+        <div style="width:30px"></div>
+      </div>
+      <div class="rank-header">
+        <div class="rank-index">#</div>
+        <div class="rank-name">玩家</div>
+        <div class="rank-score">分数</div>
+        <div class="rank-time">时间</div>
+      </div>
+      <div class="rank-list">
+        ${data.map((v,i)=>{
+          let displayIndex = i===0 ? "👑1" : i+1;
+          let nameColor = i === 0 ? "#FFD700" : i === 1 ? "#C0C0C0" : i === 2 ? "#CD7F32" : "#e0e0e0";
+          return `
+            <div class="rank-row">
+              <div class="rank-index">${displayIndex}</div>
+              <div class="rank-name" style="color:${nameColor};" title="${v.name}">${v.name}</div>
+              <div class="rank-score">${v.score}</div>
+              <div class="rank-time">${formatTime(v.created_at)}</div>
+            </div>
+          `;
+        }).join("")}
+      </div>
+    `;
+  } catch(e) {
+    // 🌐 移植：错误处理界面
+    rankEl.innerHTML = `
+      <div class="rank-title">
+        <button class="refresh-btn" onclick="loadRank()">重试</button>
+        <span style="color:#ff6b6b;">同步失败 📡</span>
+        <div style="width:30px"></div>
+      </div>
+      <div style="text-align:center; padding:15px; font-size:11px; opacity:0.6;">无法连接排行榜，请检查网络。</div>
+    `;
+  }
+  rankEl.style.opacity = "1";
+}
+
+document.addEventListener("keydown", e => {
+  if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) e.preventDefault();
+  if(e.key==="ArrowLeft") move("L");
+  if(e.key==="ArrowRight") move("R");
+  if(e.key==="ArrowUp") move("U");
+  if(e.key==="ArrowDown") move("D");
+});
+
+let sx, sy;
+gridEl.addEventListener("touchstart", e=>{
+  sx = e.touches[0].clientX;
+  sy = e.touches[0].clientY;
+},{ passive:false });
+
+gridEl.addEventListener("touchend", e=>{
+  let dx = e.changedTouches[0].clientX - sx;
+  let dy = e.changedTouches[0].clientY - sy;
+  if(Math.abs(dx) > Math.abs(dy)){
+    if(dx > 30) move("R");
+    if(dx < -30) move("L");
+  } else {
+    if(dy > 30) move("D");
+    if(dy < -30) move("U");
+  }
+},{ passive:false });
+
+function restart(){
+  grid.fill(0);
+  score = 0;
+  gameOver = false;
+  statusEl.textContent = "";
+  randomAdd();
+  randomAdd();
+  draw();
+}
+
+function openModal(){
+  document.getElementById("finalScore").textContent = score;
+  document.getElementById("modal").style.display = "flex";
+}
+
+async function submitScore(){
+  const btn = document.getElementById("subBtn");
+  let name = document.getElementById("playerName").value.trim() || "匿名玩家";
+  
+  btn.disabled = true;
+  btn.textContent = "记录中...";
+  
+  try {
+    const { error } = await db.from("scores").insert({ name, score });
+    if(error) throw error;
+    document.getElementById("modal").style.display = "none";
+    loadRank();
+  } catch(e) {
+    alert("分数提交失败，请重试。");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "记录得分";
+  }
+}
+
+function closeModal(){
+  document.getElementById("modal").style.display = "none";
+}
+
+restart();
+loadRank();
+</script>
+</body>
+</html>
