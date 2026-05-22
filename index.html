@@ -392,14 +392,36 @@ function formatTime(t){
   return `${Y}-${M}-${D} ${h}:${m}:${s}`; 
 }
 
-// 🌐 移植：网络优化后的加载函数
+// 🌐 完美的排行榜加载函数（带精准报错提示）
 async function loadRank(){
   rankEl.style.opacity = "0.6";
   try {
-    let { data, error } = await db.from("scores").select("*").order("score",{ ascending:false }).limit(50);
-    if(error) throw error; // 抛出错误进入 catch
+    // 显式指定查询字段，防止某些特殊情况下由于空值导致报错
+    let { data, error } = await db
+      .from("scores")
+      .select("name, score, created_at")
+      .order("score", { ascending: false })
+      .limit(50);
+      
+    if(error) {
+      console.error("Supabase 读取错误详情:", error);
+      throw error;
+    }
 
-    rankEl.innerHTML=`
+    if (!data || data.length === 0) {
+      rankEl.innerHTML = `
+        <div class="rank-title">
+          <button class="refresh-btn" onclick="loadRank()">刷新</button>
+          <span>🌍 排行榜 ⭐</span>
+          <div style="width:30px"></div>
+        </div>
+        <div style="text-align:center; padding:15px; font-size:11px; opacity:0.6;">暂无排名，快来拿第一吧！</div>
+      `;
+      rankEl.style.opacity = "1";
+      return;
+    }
+
+    rankEl.innerHTML = `
       <div class="rank-title">
         <button class="refresh-btn" onclick="loadRank()">刷新</button>
         <span>🌍 排行榜 ⭐</span>
@@ -427,60 +449,24 @@ async function loadRank(){
       </div>
     `;
   } catch(e) {
-    // 🌐 移植：错误处理界面
+    console.error("捕获到异常:", e);
+    // 🌐 将具体的错误原因打印在网页排行榜上，方便一眼看出问题
     rankEl.innerHTML = `
       <div class="rank-title">
         <button class="refresh-btn" onclick="loadRank()">重试</button>
         <span style="color:#ff6b6b;">同步失败 📡</span>
         <div style="width:30px"></div>
       </div>
-      <div style="text-align:center; padding:15px; font-size:11px; opacity:0.6;">无法连接排行榜，请检查网络。</div>
+      <div style="text-align:center; padding:10px; font-size:11px; color:#ff6b6b;">
+        错误原因: ${e.message || "未知网络错误"}<br>
+        <span style="opacity:0.5; font-size:9px;">请按 F12 查看控制台详情</span>
+      </div>
     `;
   }
   rankEl.style.opacity = "1";
 }
 
-document.addEventListener("keydown", e => {
-  if (["ArrowLeft","ArrowRight","ArrowUp","ArrowDown"].includes(e.key)) e.preventDefault();
-  if(e.key==="ArrowLeft") move("L");
-  if(e.key==="ArrowRight") move("R");
-  if(e.key==="ArrowUp") move("U");
-  if(e.key==="ArrowDown") move("D");
-});
-
-let sx, sy;
-gridEl.addEventListener("touchstart", e=>{
-  sx = e.touches[0].clientX;
-  sy = e.touches[0].clientY;
-},{ passive:false });
-
-gridEl.addEventListener("touchend", e=>{
-  let dx = e.changedTouches[0].clientX - sx;
-  let dy = e.changedTouches[0].clientY - sy;
-  if(Math.abs(dx) > Math.abs(dy)){
-    if(dx > 30) move("R");
-    if(dx < -30) move("L");
-  } else {
-    if(dy > 30) move("D");
-    if(dy < -30) move("U");
-  }
-},{ passive:false });
-
-function restart(){
-  grid.fill(0);
-  score = 0;
-  gameOver = false;
-  statusEl.textContent = "";
-  randomAdd();
-  randomAdd();
-  draw();
-}
-
-function openModal(){
-  document.getElementById("finalScore").textContent = score;
-  document.getElementById("modal").style.display = "flex";
-}
-
+// 🌐 完美的分数提交函数
 async function submitScore(){
   const btn = document.getElementById("subBtn");
   let name = document.getElementById("playerName").value.trim() || "匿名玩家";
@@ -489,18 +475,20 @@ async function submitScore(){
   btn.textContent = "记录中...";
   
   try {
-    const { error } = await db.from("scores").insert({ name, score });
-    if(error) throw error;
+    const { error } = await db.from("scores").insert([{ name: name, score: parseInt(score) }]);
+    if(error) {
+      console.error("Supabase 写入错误详情:", error);
+      throw error;
+    }
     document.getElementById("modal").style.display = "none";
     loadRank();
   } catch(e) {
-    alert("分数提交失败，请重试。");
+    alert("分数提交失败，原因: " + (e.message || "未知错误"));
   } finally {
     btn.disabled = false;
     btn.textContent = "记录得分";
   }
 }
-
 function closeModal(){
   document.getElementById("modal").style.display = "none";
 }
